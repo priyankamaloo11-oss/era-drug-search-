@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EMA ERA Drug Search — Real PubMed + PubChem</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f7f4;--surface:#ffffff;--surface2:#f2f1ed;--surface3:#e8e6e0;
+  --text1:#1c1b18;--text2:#5a5850;--text3:#9c9a92;
+  --border:rgba(28,27,24,0.10);--border2:rgba(28,27,24,0.22);
+  --accent:#1a5c9e;--accent-light:#e8f0fb;--accent-text:#0c3d6e;
+  --green:#2d6a2d;--green-bg:#eaf3ea;
+  --amber:#7a4e0a;--amber-bg:#fdf0d8;
+  --red:#8b1f1f;--red-bg:#fceaea;
+  --mono:'DM Mono',monospace;--serif:'Crimson Pro',serif;--sans:'Outfit',sans-serif;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:18px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#141412;--surface:#1e1d1a;--surface2:#272520;--surface3:#302f2b;
+    --text1:#f0ede5;--text2:#a09d95;--text3:#636058;
+    --border:rgba(240,237,229,0.10);--border2:rgba(240,237,229,0.22);
+    --accent:#4a8fd4;--accent-light:#0c2a47;--accent-text:#85b7eb;
+    --green:#5aac5a;--green-bg:#0d280d;
+    --amber:#d4921a;--amber-bg:#2a1c04;
+    --red:#d46060;--red-bg:#2a0808;
+  }
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text1);min-height:100vh;font-size:15px;line-height:1.6}
+
+.nav{position:sticky;top:0;z-index:200;background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:54px}
+.nav-left{display:flex;align-items:center;gap:12px}
+.nav-logo{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--text1)}
+.nav-logo span{color:var(--accent)}
+.ntag{font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:20px;font-weight:500}
+.nt-ema{background:var(--amber-bg);color:var(--amber)}
+.nt-live{background:var(--green-bg);color:var(--green)}
+.nav-right{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.page{max-width:1040px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+
+.hero{display:grid;grid-template-columns:1fr auto;gap:2rem;align-items:start;margin-bottom:1.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem}
+.hero-eyebrow{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px}
+.hero-title{font-family:var(--serif);font-size:27px;font-weight:600;line-height:1.25;color:var(--text1);margin-bottom:8px}
+.hero-title em{color:var(--accent);font-style:normal}
+.hero-desc{font-size:13px;color:var(--text2);line-height:1.65;max-width:520px}
+.hero-badges{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0}
+.hbadge{font-size:10px;font-family:var(--mono);font-weight:500;padding:4px 11px;border-radius:20px;white-space:nowrap}
+.hb-blue{background:var(--accent-light);color:var(--accent-text)}
+.hb-green{background:var(--green-bg);color:var(--green)}
+.hb-amber{background:var(--amber-bg);color:var(--amber)}
+
+.api-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.5rem;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);align-items:center}
+.api-label{font-size:11px;color:var(--text3);font-family:var(--mono);margin-right:4px}
+.api-chip{display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);color:var(--text2);padding:3px 10px;background:var(--surface2);border-radius:20px;border:1px solid var(--border)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-g{background:#4caf50}.dot-b{background:#2196f3}.dot-a{background:#ff9800}
+
+.search-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.75rem;margin-bottom:1.25rem}
+.panel-label{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px}
+.search-row{display:flex;gap:8px;margin-bottom:12px}
+.drug-input{flex:1;padding:12px 16px;font-size:15px;font-family:var(--sans);border:1px solid var(--border2);border-radius:var(--r-md);background:var(--bg);color:var(--text1);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
+.drug-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,92,158,0.12)}
+.drug-input::placeholder{color:var(--text3)}
+.btn-go{padding:12px 26px;font-size:14px;font-weight:500;font-family:var(--sans);background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);cursor:pointer;white-space:nowrap;transition:opacity 0.15s,transform 0.1s}
+.btn-go:hover{opacity:0.87}.btn-go:active{transform:scale(0.97)}.btn-go:disabled{opacity:0.4;cursor:not-allowed}
+.quick-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.qlbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.qbtn{font-size:11px;font-family:var(--mono);padding:4px 11px;border:1px solid var(--border2);border-radius:20px;cursor:pointer;color:var(--text2);background:var(--surface2);transition:all 0.12s}
+.qbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+.ep-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.75rem;margin-bottom:1.25rem}
+.phase-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.ptab{padding:6px 16px;font-size:12px;font-weight:500;font-family:var(--sans);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:transparent;color:var(--text2);transition:all 0.12s}
+.ptab:hover{background:var(--surface2);color:var(--text1)}
+.ta{background:var(--accent-light)!important;color:var(--accent-text)!important;border-color:transparent!important}
+.t1{background:var(--accent-light)!important;color:var(--accent-text)!important;border-color:transparent!important}
+.t2{background:var(--green-bg)!important;color:var(--green)!important;border-color:transparent!important}
+.tpbt{background:var(--amber-bg)!important;color:var(--amber)!important;border-color:transparent!important}
+.ep-grid{display:flex;flex-wrap:wrap;gap:5px}
+.ep-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;background:var(--surface2);color:var(--text2);transition:all 0.12s;user-select:none}
+.ep-chip:hover{border-color:var(--border2);color:var(--text1)}
+.ep-chip.on{border-color:var(--accent);background:var(--accent-light);color:var(--accent-text)}
+.chk{width:12px;height:12px;border:1px solid currentColor;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.ep-chip.on .chk::after{content:'✓'}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-top:12px}
+.btn-sm{padding:5px 12px;font-size:11px;font-family:var(--sans);border:1px solid var(--border2);border-radius:var(--r-sm);cursor:pointer;background:transparent;color:var(--text2);transition:background 0.12s}
+.btn-sm:hover{background:var(--surface2)}
+.sel-count{font-size:11px;color:var(--text3);margin-left:auto;font-family:var(--mono)}
+
+.loading{text-align:center;padding:3rem;color:var(--text3);font-size:13px;font-family:var(--mono)}
+.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.75s linear infinite;margin-bottom:12px}
+.loading-step{margin-top:6px;font-size:12px;color:var(--text3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.era-summary{background:var(--accent-light);border:1px solid rgba(26,92,158,0.15);border-radius:var(--r-lg);padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+.era-sum-label{font-size:10px;font-family:var(--mono);color:var(--accent-text);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px;opacity:0.75}
+.era-sum-text{font-size:13px;color:var(--accent-text);line-height:1.65}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 12px;text-align:center}
+.stat-num{font-size:28px;font-weight:600;font-family:var(--serif)}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+.n-r{color:var(--red)}.n-a{color:var(--amber)}.n-g{color:var(--green)}.n-t{color:var(--text1)}
+
+.section-header{display:flex;align-items:center;gap:10px;padding:10px 0;margin-bottom:8px;margin-top:1.75rem;border-bottom:1px solid var(--border)}
+.sec-tag{font-size:10px;font-family:var(--mono);font-weight:500;padding:3px 10px;border-radius:20px}
+.sec-p1{background:var(--accent-light);color:var(--accent-text)}
+.sec-p2{background:var(--green-bg);color:var(--green)}
+.sec-pbt{background:var(--amber-bg);color:var(--amber)}
+.sec-pub{background:var(--surface3);color:var(--text2)}
+.sec-pc{background:var(--green-bg);color:var(--green)}
+.sec-title{font-size:13px;font-weight:500;color:var(--text2)}
+.sec-count{font-size:11px;font-family:var(--mono);color:var(--text3);margin-left:auto}
+
+.ep-cards{display:flex;flex-direction:column;gap:7px}
+.ep-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:border-color 0.15s}
+.ep-card:hover{border-color:var(--border2)}
+.ep-card.rc{border-left:3px solid var(--red);border-radius:0 var(--r-lg) var(--r-lg) 0}
+.ep-card.ra{border-left:3px solid var(--amber);border-radius:0 var(--r-lg) var(--r-lg) 0}
+.ep-card.rg{border-left:3px solid var(--green);border-radius:0 var(--r-lg) var(--r-lg) 0}
+.ep-head{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background 0.1s}
+.ep-head:hover{background:var(--surface2)}
+.ep-sec{font-size:10px;font-family:var(--mono);color:var(--text3);min-width:38px;flex-shrink:0}
+.ep-info{flex:1;min-width:0}
+.ep-name{font-size:13px;font-weight:500;color:var(--text1)}
+.ep-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.ep-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ep-val{font-size:12px;font-family:var(--mono);font-weight:500;color:var(--text2)}
+.sbadge{font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;font-family:var(--mono)}
+.sb-c{background:var(--red-bg);color:var(--red)}
+.sb-a{background:var(--amber-bg);color:var(--amber)}
+.sb-g{background:var(--green-bg);color:var(--green)}
+.sb-n{background:var(--surface2);color:var(--text3)}
+.ep-arr{font-size:12px;color:var(--text3);transition:transform 0.2s;flex-shrink:0}
+.ep-arr.open{transform:rotate(180deg)}
+.ep-body{display:none;border-top:1px solid var(--border);padding:14px 16px}
+.ep-body.open{display:block}
+.ep-narrative{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:10px}
+.ep-guideline{font-size:11px;color:var(--text3);font-family:var(--mono);padding-top:8px;border-top:1px solid var(--border)}
+
+.pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:7px;margin-bottom:1.25rem}
+.pc-cell{background:var(--surface2);border-radius:var(--r-sm);padding:10px 12px}
+.pc-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;font-family:var(--mono)}
+.pc-val{font-size:13px;font-weight:500;color:var(--text1);font-family:var(--mono)}
+.pc-val.vr{color:var(--red)}.pc-val.va{color:var(--amber)}.pc-val.vg{color:var(--green)}
+
+.pub-cards{display:flex;flex-direction:column;gap:8px}
+.pub-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;transition:border-color 0.15s}
+.pub-card:hover{border-color:var(--border2)}
+.pub-journal{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+.pub-title{font-family:var(--serif);font-size:15px;font-weight:600;line-height:1.35;color:var(--text1);margin-bottom:5px}
+.pub-title a{color:inherit;text-decoration:none}
+.pub-title a:hover{color:var(--accent)}
+.pub-authors{font-size:12px;color:var(--text2);margin-bottom:8px}
+.pub-abs{font-size:12px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pub-abs.exp{display:block}
+.pub-footer{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap}
+.ptag{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:4px}
+.pt-yr{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.pt-era{background:var(--accent-light);color:var(--accent-text)}
+.pt-pbt{background:var(--amber-bg);color:var(--amber)}
+.pub-pmid{font-size:10px;font-family:var(--mono);color:var(--text3);margin-left:auto}
+.btn-abs{font-size:10px;font-family:var(--mono);background:none;border:none;color:var(--accent);cursor:pointer;padding:0;margin-top:4px;display:block}
+
+.empty{text-align:center;padding:4rem 2rem;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.empty-title{font-family:var(--serif);font-size:18px;color:var(--text2);margin-bottom:6px}
+.empty-sub{font-size:13px}
+.err-box{background:var(--red-bg);border:1px solid rgba(139,31,31,0.2);border-radius:var(--r-md);padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:1rem}
+.info-box{background:var(--amber-bg);border:1px solid rgba(122,78,10,0.2);border-radius:var(--r-md);padding:12px 16px;font-size:13px;color:var(--amber);margin-top:1.25rem;font-family:var(--mono)}
+
+.footer{text-align:center;margin-top:4rem;font-size:11px;color:var(--text3);font-family:var(--mono);line-height:1.8}
+.footer a{color:var(--accent);text-decoration:none}
+
+@media(max-width:680px){
+  .hero{grid-template-columns:1fr}.hero-badges{align-items:flex-start;flex-direction:row;flex-wrap:wrap}
+  .nav-right{display:none}.page{padding:1.5rem 1rem 4rem}
+  .stats-row{grid-template-columns:repeat(2,1fr)}.search-row{flex-direction:column}.btn-go{width:100%}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-left">
+    <div class="nav-logo">ERA<span>Search</span></div>
+    <span class="ntag nt-ema">EMA Guideline</span>
+    <span class="ntag nt-live">Live Data</span>
+  </div>
+  <div class="nav-right">PubMed · PubChem · Claude AI</div>
+</nav>
+
+<div class="page">
+
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">Environmental Risk Assessment · EMA/CHMP/SWP/4447/00 Rev 1</div>
+      <div class="hero-title">Drug <em>ERA Endpoint</em><br>Search Tool</div>
+      <div class="hero-desc" style="margin-top:8px">Real-time data from PubMed &amp; PubChem APIs. All endpoints mapped to EMA ERA guideline sections — Phase I, Phase II and PBT/vPvB. AI-powered regulatory interpretation using Claude.</div>
+    </div>
+    <div class="hero-badges">
+      <span class="hbadge hb-blue">PubMed NCBI API</span>
+      <span class="hbadge hb-green">PubChem REST API</span>
+      <span class="hbadge hb-amber">Claude AI Analysis</span>
+    </div>
+  </div>
+
+  <div class="api-bar">
+    <span class="api-label">Live sources:</span>
+    <span class="api-chip"><span class="dot dot-g"></span>PubMed E-utilities (NCBI) — free, no key</span>
+    <span class="api-chip"><span class="dot dot-b"></span>PubChem REST API — free, no key</span>
+    <span class="api-chip"><span class="dot dot-a"></span>Claude AI (Anthropic) — interpretation</span>
+  </div>
+
+  <div class="search-panel">
+    <div class="panel-label">Drug / Active substance name</div>
+    <div class="search-row">
+      <input class="drug-input" id="drugInput" type="text" placeholder="e.g. Ibuprofen, Diclofenac, Metformin, Sertraline, Atorvastatin..."/>
+      <button class="btn-go" id="searchBtn" onclick="runSearch()">Search ERA</button>
+    </div>
+    <div class="quick-row">
+      <span class="qlbl">Try:</span>
+      <span class="qbtn" onclick="qs('Ibuprofen')">Ibuprofen</span>
+      <span class="qbtn" onclick="qs('Diclofenac')">Diclofenac</span>
+      <span class="qbtn" onclick="qs('Metformin')">Metformin</span>
+      <span class="qbtn" onclick="qs('Sertraline')">Sertraline</span>
+      <span class="qbtn" onclick="qs('Atorvastatin')">Atorvastatin</span>
+      <span class="qbtn" onclick="qs('Amoxicillin')">Amoxicillin</span>
+      <span class="qbtn" onclick="qs('Ciprofloxacin')">Ciprofloxacin</span>
+    </div>
+  </div>
+
+  <div class="ep-panel">
+    <div class="panel-label">ERA endpoints to retrieve</div>
+    <div class="phase-tabs">
+      <button class="ptab ta" id="tab-all" onclick="filterPhase('all',this)">All phases</button>
+      <button class="ptab" id="tab-p1" onclick="filterPhase('phase1',this)">Phase I</button>
+      <button class="ptab" id="tab-p2" onclick="filterPhase('phase2',this)">Phase II</button>
+      <button class="ptab" id="tab-pbt" onclick="filterPhase('pbt',this)">PBT / vPvB</button>
+    </div>
+    <div class="ep-grid" id="epGrid"></div>
+    <div class="ctrl-row">
+      <button class="btn-sm" onclick="selAll()">Select all</button>
+      <button class="btn-sm" onclick="clrAll()">Clear all</button>
+      <span class="sel-count" id="selCount">0 selected</span>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="empty">
+      <div class="empty-icon">⚗</div>
+      <div class="empty-title">Ready to search</div>
+      <div class="empty-sub">Enter a drug name to fetch real PubMed + PubChem data with AI ERA interpretation</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Data from <a href="https://pubmed.ncbi.nlm.nih.gov" target="_blank">PubMed (NCBI)</a> &amp; <a href="https://pubchem.ncbi.nlm.nih.gov" target="_blank">PubChem</a> · Interpretation by <a href="https://anthropic.com" target="_blank">Claude AI</a><br>
+    Per <a href="https://www.ema.europa.eu/en/environmental-risk-assessment-medicinal-products-human-use" target="_blank">EMA ERA Guideline EMA/CHMP/SWP/4447/00 Rev 1</a> · For research &amp; regulatory reference only
+  </div>
+</div>
+
+<script>
+const EPS = [
+  {id:'fpen',      ph:'phase1', sec:'3.1',   lbl:'Fpen — fraction excretion',             short:'Fpen',           pc:false},
+  {id:'dosemkt',   ph:'phase1', sec:'3.2',   lbl:'Dose / market penetration',             short:'Dose',           pc:false},
+  {id:'pec_sw1',   ph:'phase1', sec:'3.3',   lbl:'PEC surface water (Phase I)',           short:'PEC sw I',       pc:false},
+  {id:'log_kow',   ph:'phase2', sec:'4.1.1', lbl:'Log Kow — lipophilicity',              short:'Log Kow',        pc:true},
+  {id:'water_sol', ph:'phase2', sec:'4.1.2', lbl:'Water solubility',                      short:'Water sol.',    pc:true},
+  {id:'vapour',    ph:'phase2', sec:'4.1.3', lbl:'Vapour pressure',                       short:'Vapour P',      pc:true},
+  {id:'henry',     ph:'phase2', sec:'4.1.4', lbl:"Henry's Law constant",                 short:"Henry's const", pc:true},
+  {id:'hydrolysis',ph:'phase2', sec:'4.1.5', lbl:'Hydrolysis (DT50)',                     short:'Hydrolysis',    pc:false},
+  {id:'photodeg',  ph:'phase2', sec:'4.1.6', lbl:'Photodegradation (DT50)',              short:'Photodeg',      pc:false},
+  {id:'biodeg',    ph:'phase2', sec:'4.1.7', lbl:'Ready biodegradability',               short:'Biodeg.',       pc:false},
+  {id:'koc',       ph:'phase2', sec:'4.1.8', lbl:'Koc — soil/sediment adsorption',       short:'Koc',           pc:false},
+  {id:'pec_sw2',   ph:'phase2', sec:'4.2.1', lbl:'PEC surface water (Phase II refined)', short:'PEC sw II',     pc:false},
+  {id:'pnec_sw',   ph:'phase2', sec:'4.2.3', lbl:'PNEC surface water / RQ',             short:'PNEC sw / RQ',  pc:false},
+  {id:'pec_sed',   ph:'phase2', sec:'4.2.4', lbl:'PEC sediment / PNEC sediment',        short:'PEC/PNEC sed.', pc:false},
+  {id:'stp',       ph:'phase2', sec:'4.2.5', lbl:'STP — PNEC sewage treatment plant',   short:'PNEC stp',      pc:false},
+  {id:'pec_soil',  ph:'phase2', sec:'4.2.6', lbl:'PEC soil / PNEC soil',                short:'PEC/PNEC soil', pc:false},
+  {id:'pec_gw',    ph:'phase2', sec:'4.2.7', lbl:'Groundwater PEC',                     short:'PEC gw',        pc:false},
+  {id:'sec_pois',  ph:'phase2', sec:'4.2.8', lbl:'Secondary poisoning RQ',              short:'Sec. poisoning',pc:false},
+  {id:'antibac',   ph:'phase2', sec:'4.3.1', lbl:'Antibacterial MoA testing',            short:'Antibac. MoA', pc:false},
+  {id:'eas',       ph:'phase2', sec:'4.3.2', lbl:'Endocrine active substances (EAS)',    short:'EAS',           pc:false},
+  {id:'pbt_screen',ph:'pbt',    sec:'5.1',   lbl:'PBT / vPvB screening',                short:'PBT screen',    pc:false},
+  {id:'pbt_def',   ph:'pbt',    sec:'5.2',   lbl:'Definitive PBT / vPvB assessment',    short:'PBT definitive',pc:false},
+  {id:'pbt_crit',  ph:'pbt',    sec:'5.2.1', lbl:'PBT / vPvB criteria (P, B, T)',       short:'PBT criteria',  pc:false},
+  {id:'pbt_perf',  ph:'pbt',    sec:'5.2.2', lbl:'Performing PBT assessment',           short:'PBT perform',   pc:false},
+];
+
+let selEps = new Set(EPS.map(e=>e.id));
+let curPhase = 'all';
+
+function buildGrid(){
+  const g=document.getElementById('epGrid');
+  const vis=curPhase==='all'?EPS:EPS.filter(e=>e.ph===curPhase);
+  g.innerHTML=vis.map(ep=>`
+    <div class="ep-chip ${selEps.has(ep.id)?'on':''}" data-id="${ep.id}" onclick="toggleEp(this,'${ep.id}')">
+      <span class="chk"></span>
+      <span style="opacity:0.5">${ep.sec}</span>
+      <span>${ep.short}</span>
+      ${ep.pc?'<span style="font-size:9px;opacity:0.45">PC</span>':''}
+    </div>`).join('');
+  updCount();
+}
+function toggleEp(el,id){
+  if(selEps.has(id)){selEps.delete(id);el.classList.remove('on')}
+  else{selEps.add(id);el.classList.add('on')}
+  updCount();
+}
+function filterPhase(ph,btn){
+  curPhase=ph;
+  document.querySelectorAll('.ptab').forEach(b=>{b.className='ptab'});
+  const m={all:'ta',phase1:'t1',phase2:'t2',pbt:'tpbt'};
+  btn.classList.add(m[ph]);
+  buildGrid();
+}
+function selAll(){EPS.forEach(e=>selEps.add(e.id));buildGrid()}
+function clrAll(){selEps.clear();buildGrid()}
+function updCount(){document.getElementById('selCount').textContent=selEps.size+' selected'}
+function qs(n){document.getElementById('drugInput').value=n;runSearch()}
+buildGrid();
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function setLoad(msg,step=''){
+  document.getElementById('results').innerHTML=`
+    <div class="loading"><div class="spinner"></div><br>${msg}
+    ${step?`<div class="loading-step">${step}</div>`:''}
+    </div>`;
+}
+
+async function fetchPubChem(drug){
+  try{
+    const r1=await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(drug)}/cids/JSON`);
+    if(!r1.ok)return null;
+    const d1=await r1.json();
+    const cid=d1.IdentifierList?.CID?.[0];
+    if(!cid)return null;
+    const r2=await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,XLogP,WaterSolubility,VaporPressure,HenryLawConstant,Complexity,HBondDonorCount,HBondAcceptorCount,TPSA/JSON`);
+    const p=r2.ok?(await r2.json())?.PropertyTable?.Properties?.[0]||{}:{};
+    return{cid,p};
+  }catch(e){return null}
+}
+
+async function fetchPubMed(drug,max=15){
+  try{
+    const queries=[
+      `"${drug}"[Title/Abstract] AND ("environmental risk assessment"[Title/Abstract] OR "ecotoxicology"[Title/Abstract] OR "PEC"[Title/Abstract] OR "PNEC"[Title/Abstract])`,
+      `"${drug}"[Title/Abstract] AND ("PBT"[Title/Abstract] OR "persistence"[Title/Abstract] OR "bioaccumulation"[Title/Abstract] OR "aquatic toxicity"[Title/Abstract])`,
+      `"${drug}"[Title/Abstract] AND ("surface water"[Title/Abstract] OR "wastewater"[Title/Abstract] OR "sediment"[Title/Abstract] OR "groundwater"[Title/Abstract])`
+    ];
+    const pmids=new Set();
+    for(const q of queries){
+      const r=await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmax=8&retmode=json&sort=relevance`);
+      if(r.ok){const d=await r.json();(d.esearchresult?.idlist||[]).forEach(id=>pmids.add(id))}
+      await sleep(350);
+    }
+    if(pmids.size===0)return[];
+    const ids=[...pmids].slice(0,max);
+    const r=await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${ids.join(',')}&retmode=xml&rettype=abstract`);
+    if(!r.ok)return[];
+    const xml=await r.text();
+    const doc=new DOMParser().parseFromString(xml,'text/xml');
+    const arts=[];
+    doc.querySelectorAll('PubmedArticle').forEach(a=>{
+      try{
+        const pmid=a.querySelector('PMID')?.textContent||'';
+        const title=a.querySelector('ArticleTitle')?.textContent||'';
+        if(!title||!pmid)return;
+        const abs=[...a.querySelectorAll('AbstractText')].map(x=>x.textContent).join(' ')||'';
+        const journal=a.querySelector('Title')?.textContent||a.querySelector('ISOAbbreviation')?.textContent||'';
+        const year=a.querySelector('PubDate Year')?.textContent||a.querySelector('PubDate MedlineDate')?.textContent?.slice(0,4)||'';
+        const auths=[...a.querySelectorAll('Author')].slice(0,3).map(x=>{
+          const ln=x.querySelector('LastName')?.textContent||'';
+          const fn=x.querySelector('ForeName')?.textContent||'';
+          return ln+(fn?' '+fn.charAt(0)+'.':'');
+        }).join(', ')+(a.querySelectorAll('Author').length>3?' et al.':'');
+        const kws=['environmental','ecotox','aquatic','pec','pnec','pbt','persist','bioaccum','wastewater','surface water','sediment','soil','groundwater','toxicity','fate','photodeg','biodeg'];
+        const rel=kws.filter(k=>(title+abs).toLowerCase().includes(k)).length;
+        arts.push({pmid,title,abs,journal,year,auths,rel});
+      }catch(e){}
+    });
+    return arts.sort((a,b)=>b.rel-a.rel);
+  }catch(e){return[]}
+}
+
+async function aiInterpret(drug,pcData,pubCount,selEpsList){
+  const pc=pcData?`CID:${pcData.cid} | MW:${pcData.p.MolecularWeight||'?'}g/mol | XLogP:${pcData.p.XLogP!=null?pcData.p.XLogP:'?'} | Solubility:${pcData.p.WaterSolubility||'?'} | VaporP:${pcData.p.VaporPressure||'?'} | HenryLaw:${pcData.p.HenryLawConstant||'?'} | TPSA:${pcData.p.TPSA||'?'} | HBD:${pcData.p.HBondDonorCount||'?'} | HBA:${pcData.p.HBondAcceptorCount||'?'}`:'Not found in PubChem';
+  const epList=selEpsList.map(e=>e.id).join(',');
+
+  const prompt=`You are an EMA ERA regulatory scientist. Drug: "${drug}". PubChem data: ${pc}. PubMed ERA articles: ${pubCount}. Selected endpoints: ${epList}.
+
+Respond with ONLY valid JSON (no markdown), this exact structure:
+{"drug_class":"therapeutic class","era_summary":"2-3 sentence ERA regulatory summary","phase1_trigger":true/false,"phase1_reason":"why","watch_list":true/false,"key_concerns":["concern1","concern2"],"endpoints":{"fpen":{"value":"1.0","status":"acceptable","narrative":"2 sentence EMA guideline interpretation"},"dosemkt":{"value":"WHO DDD","status":"caution","narrative":"..."},"pec_sw1":{"value":"µg/L","status":"concern","narrative":"..."},"log_kow":{"value":"${pcData?.p?.XLogP!=null?pcData.p.XLogP:'?'}","status":"acceptable","narrative":"..."},"water_sol":{"value":"${pcData?.p?.WaterSolubility||'?'}","status":"acceptable","narrative":"..."},"vapour":{"value":"${pcData?.p?.VaporPressure||'?'}","status":"acceptable","narrative":"..."},"henry":{"value":"${pcData?.p?.HenryLawConstant||'?'}","status":"acceptable","narrative":"..."},"hydrolysis":{"value":"DT50 value or required","status":"na","narrative":"..."},"photodeg":{"value":"DT50 or required","status":"na","narrative":"..."},"biodeg":{"value":"% or required","status":"na","narrative":"..."},"koc":{"value":"L/kg or required","status":"na","narrative":"..."},"pec_sw2":{"value":"µg/L or required","status":"na","narrative":"..."},"pnec_sw":{"value":"µg/L or required","status":"na","narrative":"..."},"pec_sed":{"value":"µg/kg or required","status":"na","narrative":"..."},"stp":{"value":"mg/L or required","status":"na","narrative":"..."},"pec_soil":{"value":"µg/kg or required","status":"na","narrative":"..."},"pec_gw":{"value":"µg/L or required","status":"na","narrative":"..."},"sec_pois":{"value":"RQ or not triggered","status":"na","narrative":"..."},"antibac":{"value":"applicable/N/A","status":"na","narrative":"..."},"eas":{"value":"applicable/N/A","status":"na","narrative":"..."},"pbt_screen":{"value":"P/B/T result","status":"na","narrative":"..."},"pbt_def":{"value":"required/not required","status":"na","narrative":"..."},"pbt_crit":{"value":"P:x/B:x/T:x","status":"na","narrative":"..."},"pbt_perf":{"value":"status","status":"na","narrative":"..."}}}
+
+Status rules: "concern"=RQ>1 or criteria met needing action, "caution"=borderline or data gap, "acceptable"=low risk, "na"=not applicable. Use real published ERA data if known for this drug. Be precise.`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2800,messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    let txt=d.content?.map(b=>b.text||'').join('')||'';
+    txt=txt.replace(/```json|```/g,'').trim();
+    const s=txt.indexOf('{'),e=txt.lastIndexOf('}');
+    if(s>-1&&e>-1)txt=txt.slice(s,e+1);
+    return JSON.parse(txt);
+  }catch(e){return null}
+}
+
+async function runSearch(){
+  const drug=document.getElementById('drugInput').value.trim();
+  if(!drug){alert('Please enter a drug name');return}
+  if(selEps.size===0){alert('Please select at least one endpoint');return}
+  const btn=document.getElementById('searchBtn');
+  btn.disabled=true;btn.textContent='Searching...';
+  try{
+    setLoad(`Fetching ERA data for <strong>${drug}</strong>`,'Step 1/3: Querying PubChem physicochemical database...');
+    const [pcData]=await Promise.all([fetchPubChem(drug),sleep(500)]);
+
+    setLoad(`Fetching ERA data for <strong>${drug}</strong>`,`Step 2/3: Searching PubMed ERA literature... ${pcData?'&#10003; PubChem: '+pcData.cid:'&#10007; Not in PubChem'}`);
+    const articles=await fetchPubMed(drug,12);
+
+    setLoad(`Fetching ERA data for <strong>${drug}</strong>`,`Step 3/3: Running AI ERA interpretation... &#10003; ${articles.length} PubMed articles`);
+    const selList=EPS.filter(e=>selEps.has(e.id));
+    const ai=await aiInterpret(drug,pcData,articles.length,selList);
+
+    render(drug,pcData,articles,ai,selList);
+  }catch(err){
+    document.getElementById('results').innerHTML=`<div class="err-box">Error: ${err.message}. Check your internet connection and try again.</div>`;
+  }
+  btn.disabled=false;btn.textContent='Search ERA';
+}
+
+function render(drug,pcData,articles,ai,selList){
+  const eps=ai?.endpoints||{};
+  let nC=0,nA=0,nG=0;
+  selList.forEach(ep=>{const s=eps[ep.id]?.status||'na';if(s==='concern')nC++;else if(s==='caution')nA++;else if(s==='acceptable')nG++;});
+
+  let html='';
+
+  html+=`
+    <div class="era-summary">
+      <div class="era-sum-label">AI ERA Assessment — ${drug}${ai?.drug_class?' · '+ai.drug_class:''}${ai?.watch_list?' · <strong style="color:var(--red)">EU Watch List</strong>':''}</div>
+      <div class="era-sum-text">${ai?.era_summary||'ERA assessment complete. Review individual endpoints below.'}</div>
+      ${ai?.key_concerns?.length?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${ai.key_concerns.map(c=>`<span style="font-size:11px;background:var(--red-bg);color:var(--red);padding:2px 9px;border-radius:20px;font-family:var(--mono)">${c}</span>`).join('')}</div>`:''}
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num n-r">${nC}</div><div class="stat-lbl">Concern</div></div>
+      <div class="stat-card"><div class="stat-num n-a">${nA}</div><div class="stat-lbl">Caution</div></div>
+      <div class="stat-card"><div class="stat-num n-g">${nG}</div><div class="stat-lbl">Acceptable</div></div>
+      <div class="stat-card"><div class="stat-num n-t">${selList.length}</div><div class="stat-lbl">Endpoints</div></div>
+    </div>`;
+
+  if(pcData){
+    const p=pcData.p;
+    html+=`<div class="section-header"><span class="sec-tag sec-pc">PubChem</span><span class="sec-title">Real physicochemical data — CID ${pcData.cid}</span></div>
+    <div class="pc-grid">
+      ${pCell('Molecular formula',p.MolecularFormula||'—')}
+      ${pCell('Molecular weight',(p.MolecularWeight||'—')+' g/mol')}
+      ${pCell('XLogP (Log Kow)',p.XLogP!=null?String(p.XLogP):'—',p.XLogP!=null?(p.XLogP>3?'va':(p.XLogP<0?'vg':'')):'') }
+      ${pCell('Water solubility',p.WaterSolubility||'—')}
+      ${pCell('Vapour pressure',p.VaporPressure||'—')}
+      ${pCell("Henry's Law constant",p.HenryLawConstant||'—')}
+      ${pCell('TPSA',(p.TPSA!=null?p.TPSA:'—')+' Å²')}
+      ${pCell('H-bond donors / acceptors',(p.HBondDonorCount!=null?p.HBondDonorCount:'—')+' / '+(p.HBondAcceptorCount!=null?p.HBondAcceptorCount:'—'))}
+    </div>`;
+  }
+
+  const p1=selList.filter(e=>e.ph==='phase1');
+  const p2=selList.filter(e=>e.ph==='phase2');
+  const pb=selList.filter(e=>e.ph==='pbt');
+
+  if(p1.length) html+=`<div class="section-header"><span class="sec-tag sec-p1">Phase I</span><span class="sec-title">${ai?.phase1_reason||''}</span><span class="sec-count">${p1.length} endpoints</span></div><div class="ep-cards">${p1.map(ep=>epCard(ep,eps[ep.id])).join('')}</div>`;
+  if(p2.length) html+=`<div class="section-header"><span class="sec-tag sec-p2">Phase II</span><span class="sec-title">Physico-chemical, fate &amp; ecotoxicity</span><span class="sec-count">${p2.length} endpoints</span></div><div class="ep-cards">${p2.map(ep=>epCard(ep,eps[ep.id])).join('')}</div>`;
+  if(pb.length) html+=`<div class="section-header"><span class="sec-tag sec-pbt">PBT / vPvB</span><span class="sec-title">Persistence, bioaccumulation &amp; toxicity</span><span class="sec-count">${pb.length} endpoints</span></div><div class="ep-cards">${pb.map(ep=>epCard(ep,eps[ep.id])).join('')}</div>`;
+
+  if(articles.length){
+    html+=`<div class="section-header" style="margin-top:2rem"><span class="sec-tag sec-pub">PubMed</span><span class="sec-title">ERA-relevant literature — real articles</span><span class="sec-count">${articles.length} found</span></div>
+    <div class="pub-cards">${articles.map(a=>pubCard(a)).join('')}</div>`;
+  } else {
+    html+=`<div class="info-box">No ERA-specific PubMed articles found for "${drug}". This may indicate limited published environmental data for this substance — additional testing may be required per EMA guideline.</div>`;
+  }
+
+  document.getElementById('results').innerHTML=html;
+}
+
+function pCell(lbl,val,cls=''){
+  return `<div class="pc-cell"><div class="pc-lbl">${lbl}</div><div class="pc-val ${cls}">${val}</div></div>`;
+}
+
+function epCard(ep,d){
+  const data=d||{value:'—',status:'na',narrative:'No AI data for this endpoint.'};
+  const sMap={concern:'sb-c',caution:'sb-a',acceptable:'sb-g',na:'sb-n'};
+  const lMap={concern:'Concern',caution:'Caution',acceptable:'Acceptable',na:'N/A'};
+  const cMap={concern:'rc',caution:'ra',acceptable:'rg'};
+  const skipVals=['—','required','n/a','not required','not applicable','see pubchem','applicable or n/a','known or required','check'];
+  const showV=data.value&&!skipVals.includes((data.value||'').toLowerCase().trim());
+  const phLbl=ep.ph==='phase1'?'Phase I':ep.ph==='phase2'?'Phase II':'PBT/vPvB';
+  return `<div class="ep-card ${cMap[data.status]||''}">
+    <div class="ep-head" onclick="toggleCard(this)">
+      <span class="ep-sec">${ep.sec}</span>
+      <div class="ep-info"><div class="ep-name">${ep.lbl}</div><div class="ep-sub">${phLbl}${ep.pc?' · PubChem data':''}</div></div>
+      <div class="ep-meta">
+        ${showV?`<span class="ep-val">${data.value}</span>`:''}
+        <span class="sbadge ${sMap[data.status]||'sb-n'}">${lMap[data.status]||'N/A'}</span>
+        <span class="ep-arr">▾</span>
+      </div>
+    </div>
+    <div class="ep-body">
+      <p class="ep-narrative">${data.narrative||'No interpretation available.'}</p>
+      <div class="ep-guideline">EMA ERA Guideline § ${ep.sec} · ${phLbl} · EMA/CHMP/SWP/4447/00 Rev 1</div>
+    </div>
+  </div>`;
+}
+
+function pubCard(a){
+  const hasPBT=(a.title+a.abs).toLowerCase().includes('pbt')||(a.title+a.abs).toLowerCase().includes('persist');
+  const relevLabel=a.rel>4?'High ERA relevance':a.rel>2?'ERA relevant':'Environmental';
+  return `<div class="pub-card">
+    <div class="pub-journal">${a.journal||'Journal unavailable'}${a.year?' · '+a.year:''}</div>
+    <div class="pub-title"><a href="https://pubmed.ncbi.nlm.nih.gov/${a.pmid}/" target="_blank" rel="noopener">${a.title}</a></div>
+    ${a.auths?`<div class="pub-authors">${a.auths}</div>`:''}
+    ${a.abs?`<div class="pub-abs" id="abs-${a.pmid}">${a.abs}</div><button class="btn-abs" onclick="toggleAbs('${a.pmid}')">show more</button>`:''}
+    <div class="pub-footer">
+      <span class="ptag pt-yr">${a.year||'—'}</span>
+      <span class="ptag pt-era">${relevLabel}</span>
+      ${hasPBT?'<span class="ptag pt-pbt">PBT</span>':''}
+      <span class="pub-pmid">PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/${a.pmid}/" target="_blank" rel="noopener" style="color:var(--accent)">${a.pmid}</a></span>
+    </div>
+  </div>`;
+}
+
+function toggleCard(head){
+  const body=head.nextElementSibling;
+  const arr=head.querySelector('.ep-arr');
+  const open=body.classList.contains('open');
+  body.classList.toggle('open',!open);
+  arr.classList.toggle('open',!open);
+}
+function toggleAbs(pmid){
+  const el=document.getElementById('abs-'+pmid);
+  const btn=el.nextElementSibling;
+  const exp=el.classList.contains('exp');
+  el.classList.toggle('exp',!exp);
+  btn.textContent=exp?'show more':'show less';
+}
+
+document.getElementById('drugInput').addEventListener('keydown',e=>{if(e.key==='Enter')runSearch()});
+</script>
+</body>
+</html>
