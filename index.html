@@ -427,7 +427,7 @@ async function runSearch(){
     const [pcData]=await Promise.all([fetchPubChem(drug),sleep(500)]);
 
     setLoad(`Fetching ERA data for <strong>${drug}</strong>`,`Step 2/3: Searching PubMed ERA literature... ${pcData?'&#10003; PubChem: '+pcData.cid:'&#10007; Not in PubChem'}`);
-    const articles=await fetchPubMed(drug,12);
+    const articles=await fetchPubMed(drug,100000000000000);
 
     setLoad(`Fetching ERA data for <strong>${drug}</strong>`,`Step 3/3: Running AI ERA interpretation... &#10003; ${articles.length} PubMed articles`);
     const selList=EPS.filter(e=>selEps.has(e.id));
